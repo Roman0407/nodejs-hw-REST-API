@@ -17,26 +17,44 @@ const getContactById = async (contactId) => {
 }
 
 const addContact = async(body) => {
-    const contacts = await listContacts();
-    const newContact = {
-      id: nanoid(),
-        ...body,
-    }
-    contacts.push(newContact);
+  const contacts = await listContacts();
+  const newContact = {
+          id: nanoid(),
+            ...body,
+        }
+  contacts.push(newContact);
+  try {
     await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
     return newContact;
-}
+  } catch (error) {
+    return { error };
+  }
+};
 
-const updateContact = async(id, body) => {
+
+const updateContact = async (contactId, body) => {
     const contacts = await listContacts();
-    const index = contacts.findIndex(item => item.id === id);
-    if(index === -1){
-        return null;
+    const idx = contacts.findIndex(
+      (contact) => contact.id === contactId.toString()
+    );
+  
+    if (idx === -1) {
+      return null;
     }
-    contacts[index] = {id, ...body};
-    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-    return contacts[index];
-}
+    const prevContact = await getContactById(contactId);
+    const updatedContact = { ...prevContact, ...body };
+   
+  
+    contacts.splice(idx, 1, updatedContact);
+  
+    try {
+      await fs.writeFile(contactsPath, JSON.stringify(contacts), "utf8");
+      return updatedContact;
+    } catch (error) {
+      return { error };
+    }
+  };
+  
 
 const removeContact = async(contactId) => {
     const contacts = await listContacts();

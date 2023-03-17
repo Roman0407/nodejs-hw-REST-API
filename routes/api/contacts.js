@@ -37,6 +37,7 @@ router.get('/:contactId', async (req, res, next) => {
   
 })
 
+
 router.post('/', async (req, res, next) => {
   try {
     const {error} = addSchema.validate(req.body);
@@ -51,23 +52,40 @@ router.post('/', async (req, res, next) => {
   }
 })
 
-router.put('/:contactId', async (req, res, next) => {
-  try {
-    const {error} = addSchema.validate(req.body);
-    if(error) {
-     throw HttpError(400, "missing fields");
-    }
-    const {contactId} = req.params;
-    const result = await contacts.updateContact(contactId, req.body);
-    if(!result){
-      throw HttpError(404, "Not found");
-    }
-    res.json(result);
+
+
+router.put("/:contactId", async (req, res, next) => {
+  const schema = Joi.object({
+    name: Joi.string().min(3).max(30).optional(),
+    email: Joi.string()
+      .email({
+        minDomainSegments: 2,
+        tlds: { allow: ["com", "net"] },
+      })
+      .optional(),
+    phone: Joi.string().min(7).max(20).optional(),
+  });
+  const { error, value } = schema.validate(req.body);
+
+  if (error) {
+    res.status(400).json({ error: error.details });
+    return;
   }
-  catch(error) {
-   next(error);
+  if (Object.keys(value).length === 0) {
+    res.status(400).json({ message: "missing fields" });
+    return;
   }
-})
+
+  const { contactId } = req.params;
+  const response = await contacts.updateContact(contactId, value);
+
+  if (!response) {
+    res.status(404).json({ message: "Not found" });
+    return;
+  }
+  res.status(200).json(response);
+});
+
 
 router.delete('/:contactId', async (req, res, next) => {
  try {
