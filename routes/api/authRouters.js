@@ -14,6 +14,14 @@ authRouter.post(
   authCtrl.register
 );
 
+authRouter.get("/verify/:verificationToken", authCtrl.verification);
+
+authRouter.post(
+  "/verify",
+  validateBody(schemas.verifySchema),
+  authCtrl.resendVerification
+);
+
 authRouter.post("/login", validateBody(schemas.authSchema), authCtrl.login);
 
 authRouter.get("/current", authentificate, authCtrl.getCurrent);
